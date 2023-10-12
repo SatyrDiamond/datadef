@@ -74,8 +74,8 @@ def decode_part(input_stream, d_valtype):
 		return [decode_part(input_stream, d_valtype[2:]) for _ in range(int(list_len))]
 
 	elif valuetype[0] == 'pair':
-		first = decode_part(input_stream, [valuetype[1]])
-		second = decode_part(input_stream, [valuetype[2]])
+		first = decode_part(input_stream, d_valtype[1].split(','))
+		second = decode_part(input_stream, d_valtype[2].split(','))
 		return [first, second]
 
 	elif valuetype[0] == 'getvar': return global_vars[valuetype[1]]
