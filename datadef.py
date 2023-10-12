@@ -25,8 +25,12 @@ def decode_part(input_stream, d_valtype):
 	valuetype = d_valtype[0].split(',')
 
 	if valuetype[0] == 'skip':             input_stream.read(int(valuetype[1]))
+	elif valuetype[0] == 'subdefine':      return decode_data(input_stream, valuetype[1])
 
+	elif valuetype[0] == 'getvar':         return global_vars[valuetype[1]]
 	elif valuetype[0] == 'num':            return struct.unpack('B', input_stream.read(1))[0]
+	elif valuetype[0] == 'currentpos':     return input_stream.tell()
+	elif valuetype[0] == 'subdefine':      return decode_data(input_stream, valuetype[1])
 
 	elif valuetype[0] == 'byte':           return struct.unpack('B', input_stream.read(1))[0]
 	elif valuetype[0] == 's_byte':         return struct.unpack('b', input_stream.read(1))[0]
@@ -46,39 +50,35 @@ def decode_part(input_stream, d_valtype):
 	elif valuetype[0] == 'double':         return struct.unpack('d', input_stream.read(8))[0]
 	elif valuetype[0] == 'double_b':       return struct.unpack('>d', input_stream.read(8))[0]
 
-	elif valuetype[0] == 'raw':
-		return input_stream.read(int(valuetype[1]))
+	elif valuetype[0] == 'raw':            return input_stream.read(int(valuetype[1]))
+	elif valuetype[0] == 'raw_l':          return input_stream.read(int( decode_part(input_stream, d_valtype[1:]) ))
 
-	elif valuetype[0] == 'raw_l':
-		val_len = decode_part(input_stream, d_valtype[1:])
-		return input_stream.read(int(val_len))
+	elif valuetype[0] == 'string_n':       return string_fix(input_stream.read(int(valuetype[1])))
+	elif valuetype[0] == 'string_l':       return string_fix(input_stream.read( decode_part(input_stream, d_valtype[1:]) ))
+	elif valuetype[0] == 'string_t':       return readstring(input_stream)
 
-	elif valuetype[0] == 'string_n':   
-		return string_fix(input_stream.read(int(valuetype[1])))
+	elif valuetype[0] == 'list_n':         return [decode_part(input_stream, d_valtype[1:]) for _ in range(int(valuetype[1]))]
+	elif valuetype[0] == 'list_l':         return [decode_part(input_stream, d_valtype[2:]) for _ in range(int( decode_part(input_stream, d_valtype[1:]) ))]
 
-	elif valuetype[0] == 'string_l':
-		string_len = decode_part(input_stream, d_valtype[1:])
-		return string_fix(input_stream.read(string_len))
+	elif valuetype[0] == 'pair':           return [decode_part(input_stream, d_valtype[x+1].split(',')) for x in range(2)]
+	elif valuetype[0] == 'mlist':          return [decode_part(input_stream, [p_valtype]) for p_valtype in d_valtype[1:]]
 
-	elif valuetype[0] == 'string_t':
-		return readstring(input_stream)
+	elif valuetype[0] == 'keyval_n':
+		output = {}
+		for _ in range(int(valuetype[1])):
+			kv_key = decode_part(input_stream, [d_valtype[1]])
+			kv_val = decode_part(input_stream, [d_valtype[2]])
+			output[kv_key] = kv_val
+		return output
 
-	elif valuetype[0] == 'subdefine':
-		return decode_data(input_stream, valuetype[1])
+	elif valuetype[0] == 'keyval_l':
+		output = {}
+		for _ in range( decode_part(input_stream, [d_valtype[1]]) ):
+			kv_key = decode_part(input_stream, [d_valtype[2]])
+			kv_val = decode_part(input_stream, [d_valtype[3]])
+			output[kv_key] = kv_val
+		return output
 
-	elif valuetype[0] == 'list_n':
-		return [decode_part(input_stream, d_valtype[1:]) for _ in range(int(valuetype[1]))]
-
-	elif valuetype[0] == 'list_l':
-		list_len = decode_part(input_stream, d_valtype[1:])
-		return [decode_part(input_stream, d_valtype[2:]) for _ in range(int(list_len))]
-
-	elif valuetype[0] == 'pair':
-		first = decode_part(input_stream, d_valtype[1].split(','))
-		second = decode_part(input_stream, d_valtype[2].split(','))
-		return [first, second]
-
-	elif valuetype[0] == 'getvar': return global_vars[valuetype[1]]
 
 	else:
 		print('unknown cmd:', valuetype[0])
@@ -100,40 +100,30 @@ def decode_data(input_stream, current_defname):
 		using_defs.append(current_defname)
 		for def_part in current_def:
 
-			#print(input_stream.tell(), current_defname, def_part)
-
 			if len(def_part) == 3: 
 				d_command, d_valtype, d_name = def_part
-
-				print(d_command, d_valtype, d_name)
-
 				if d_command == 'header': 
 					hexdata = bytes.hex(decode_part(input_stream, d_valtype))
-
-					if hexdata != d_name:
-						print('[datadef] header not match')
+					if hexdata != d_name: 
+						print('[datadef] header not match', hexdata, d_name)
 						exit()
 
-				if d_command == 'part': 
-					outval = decode_part(input_stream, d_valtype)
-					if outval != None: output_data[d_name] = outval
+				if d_command == 'part': output_data[d_name] = decode_part(input_stream, d_valtype)
 				if d_command == 'setvar': global_vars[d_name] = decode_part(input_stream, d_valtype)
 				if d_command == 'pointer': pointers[d_name] = decode_part(input_stream, d_valtype)
 				if d_command == 'pointset': pointset[d_name] = decode_part(input_stream, d_valtype)
+				if d_command == 'var_add': global_vars[d_name] += decode_part(input_stream, d_valtype)
+				if d_command == 'var_sub': global_vars[d_name] -= decode_part(input_stream, d_valtype)
 
 				if def_part[0] == 'act_pointset': 
-					print(d_valtype[0].split(','))
 					t_subdefine, t_pointset = d_valtype[0].split(',')
-
 					dataset = []
 					oldpos = input_stream.tell()
 					for pointer in pointset[t_pointset]:
 						if pointer != 0:
 							input_stream.seek(pointer)
 							dataset.append(  decode_part(input_stream, ['subdefine,'+t_subdefine])  )
-						else:
-							dataset.append(None)
-
+						else: dataset.append(None)
 
 					output_data[d_name] = dataset
 					input_stream.seek(oldpos)
