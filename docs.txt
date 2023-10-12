@@ -1,0 +1,29 @@
+
+
+Part
+	skip		number
+	byte
+	s_byte
+	short
+	short_b
+	s_short
+	s_short_b
+	int
+	int_b
+	s_int
+	s_int_b
+	float
+	float_b
+	double
+	double_b
+	raw
+	raw_l 		part
+	string_n	+number
+	string_l 	part
+	string_t
+	subdefine   +name
+	list_n 		+number
+	list_l 		part
+	pair 		part		part
+	keyval_n 	+number		part		part
+	keyval_l 	part		part		part
