@@ -11,8 +11,8 @@ a binary structure parser, outputs as python dictionary
 | ```setvar``` | same as ```part``` but set as varible | Var Name |
 | ```pointer``` | add to pointer list | Pointer Name |
 | ```pointset``` | add to pointerset list, must be list of numbers | PointerSet Name |
-| ```act_pointer``` | Define Name, Pointer Name | |
-| ```act_pointset``` | Define Name, PointerSet Name | |
+| ```act_pointer``` | Structure Name, Pointer Name | |
+| ```act_pointset``` | Structure Name, PointerSet Name | |
 | ```header``` | Length, same as ```part``` but must be number | Hex Data |
 
 ## Part
