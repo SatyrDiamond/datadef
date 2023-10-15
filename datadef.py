@@ -145,6 +145,13 @@ def decode_data(input_stream, current_defname):
 					output_data[d_name] = dataset
 					input_stream.seek(oldpos)
 
+				if def_part[0] == 'act_pointer': 
+					t_subdefine, t_pointername = d_valtype[0].split(',')
+					dataset = []
+					oldpos = input_stream.tell()
+					input_stream.seek(pointers[t_pointername])
+					output_data[d_name] = decode_part(input_stream, ['subdefine,'+t_subdefine])
+					input_stream.seek(oldpos)
 
 			#if def_part[0] == 'math_pointset': 
 			#	splitted_string = def_part[1].split(',')
