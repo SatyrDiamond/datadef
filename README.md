@@ -3,7 +3,7 @@
 
 ## Main
 | Action Type | Name | Last Part |
-| --- | --- | --- | --- |
+| --- | --- | --- |
 | ```part``` | Output Data | Value Name |
 | ```setvar``` | same as ```part``` but set as varible | Var Name |
 | ```pointer``` | add to pointer list | Pointer Name |
