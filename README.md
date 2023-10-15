@@ -1,13 +1,18 @@
 # DataDef: Data Definition Decode (not finished)
 
+a binary structure parser, outputs as python dictionary
+
 ## Main
 | Action Type | Info | Last Part |
 | --- | --- | --- |
+| ```def_start``` | Structure Name |  |
+| ```def_end``` | Structure End |  |
 | ```part``` | Output Data | Value Name |
 | ```setvar``` | same as ```part``` but set as varible | Var Name |
 | ```pointer``` | add to pointer list | Pointer Name |
 | ```pointset``` | add to pointerset list, must be list of numbers | PointerSet Name |
-| ```act_pointset``` | Define Name, PointerSet Name | PointerSet Name |
+| ```act_pointset``` | Define Name, Pointer Name | |
+| ```act_pointset``` | Define Name, PointerSet Name | |
 | ```header``` | Length | Hex Data |
 
 ## Part
@@ -42,7 +47,6 @@
 | ```keyval_n``` | Key-Value | Length | StringType, ValueType |
 | ```keyval_l``` | Key-Value | | Length, StringType, ValueType |
 | ```getvar``` | Get Var | Var Name | |
-
 
 ## example
 ```
