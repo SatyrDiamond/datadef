@@ -3,6 +3,7 @@ import json
 import argparse
 import os
 import struct
+import varint
 import datadef
 
 def readstring(data):
@@ -50,13 +51,24 @@ def decode_part(input_stream, d_valtype):
 	elif valuetype[0] == 'double':         return struct.unpack('d', input_stream.read(8))[0]
 	elif valuetype[0] == 'double_b':       return struct.unpack('>d', input_stream.read(8))[0]
 
+	elif valuetype[0] == 'varint':         return varint.decode_stream(input_stream)
+	elif valuetype[0] == 'varint_f':       return varint.decode_bytes(input_stream.read(4))
+
 	elif valuetype[0] == 'raw':            return input_stream.read(int(valuetype[1]))
 	elif valuetype[0] == 'raw_l':          return input_stream.read(int( decode_part(input_stream, d_valtype[1:]) ))
 
 	elif valuetype[0] == 'string_n':       return string_fix(input_stream.read(int(valuetype[1])))
 	elif valuetype[0] == 'string_l':       return string_fix(input_stream.read( decode_part(input_stream, d_valtype[1:]) ))
+
+	elif valuetype[0] == 's_string_n':     return input_stream.read(int(valuetype[1])).split(b'\x00')[0]
+	elif valuetype[0] == 's_string_l':     return input_stream.read( decode_part(input_stream, d_valtype[1:]) ).split(b'\x00')[0]
+
 	elif valuetype[0] == 'string_t':       return readstring(input_stream)
 
+	elif valuetype[0] == 'dstring_n':      return input_stream.read(int(valuetype[1])*2).decode()
+	elif valuetype[0] == 'dstring_l':      return input_stream.read( decode_part(input_stream, d_valtype[1:])*2 ).decode()
+
+	elif valuetype[0] == 'string_n':       return string_fix(input_stream.read(int(valuetype[1])))
 	elif valuetype[0] == 'list_n':         return [decode_part(input_stream, d_valtype[1:]) for _ in range(int(valuetype[1]))]
 	elif valuetype[0] == 'list_l':         return [decode_part(input_stream, d_valtype[2:]) for _ in range(int( decode_part(input_stream, d_valtype[1:]) ))]
 
@@ -108,12 +120,17 @@ def decode_data(input_stream, current_defname):
 						print('[datadef] header not match', hexdata, d_name)
 						exit()
 
-				if d_command == 'part': output_data[d_name] = decode_part(input_stream, d_valtype)
+				if d_command == 'part': 
+					outval = decode_part(input_stream, d_valtype)
+					if d_name != '': output_data[d_name] = outval
+					#if not isinstance(outval, dict): 
+					#	print(input_stream.tell(), current_defname, d_command, d_valtype, d_name, outval)
 				if d_command == 'setvar': global_vars[d_name] = decode_part(input_stream, d_valtype)
 				if d_command == 'pointer': pointers[d_name] = decode_part(input_stream, d_valtype)
 				if d_command == 'pointset': pointset[d_name] = decode_part(input_stream, d_valtype)
-				if d_command == 'var_add': global_vars[d_name] += decode_part(input_stream, d_valtype)
-				if d_command == 'var_sub': global_vars[d_name] -= decode_part(input_stream, d_valtype)
+
+				if d_command == 'dataset_len': 
+					datasetlen[d_name] = decode_part(input_stream, d_valtype)
 
 				if def_part[0] == 'act_pointset': 
 					t_subdefine, t_pointset = d_valtype[0].split(',')
