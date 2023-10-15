@@ -13,7 +13,7 @@
 ## Part
 | datatype | Name | Comma Arguments | DataType Arguments |
 | --- | --- | --- | --- |
-| ```skip``` | Skip | | |
+| ```skip``` | Skip | Length | |
 | ```byte``` | Byte | | |
 | ```s_byte``` | Signed Byte | | |
 | ```short``` | Short (Little) | | |
