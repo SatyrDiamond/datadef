@@ -6,7 +6,7 @@
 | ```part``` | Output Data | Value Name |
 | ```setvar``` | same as ```part``` but set as varible | Var Name |
 | ```pointer``` | add to pointer list | Pointer Name |
-| ```pointset``` | must be list of numbers | PointerSet Name |
+| ```pointset``` | add to pointerset list, must be list of numbers | PointerSet Name |
 | ```act_pointset``` | Define Name, PointerSet Name | PointerSet Name |
 | ```header``` | Length | Hex Data |
 
