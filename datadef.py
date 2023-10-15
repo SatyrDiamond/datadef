@@ -26,12 +26,12 @@ def decode_part(input_stream, d_valtype):
 	valuetype = d_valtype[0].split(',')
 
 	if valuetype[0] == 'skip':             input_stream.read(int(valuetype[1]))
-	elif valuetype[0] == 'subdefine':      return decode_data(input_stream, valuetype[1])
+	elif valuetype[0] == 'structure':      return decode_data(input_stream, valuetype[1])
 
 	elif valuetype[0] == 'getvar':         return global_vars[valuetype[1]]
 	elif valuetype[0] == 'num':            return struct.unpack('B', input_stream.read(1))[0]
 	elif valuetype[0] == 'currentpos':     return input_stream.tell()
-	elif valuetype[0] == 'subdefine':      return decode_data(input_stream, valuetype[1])
+	elif valuetype[0] == 'structure':      return decode_data(input_stream, valuetype[1])
 
 	elif valuetype[0] == 'byte':           return struct.unpack('B', input_stream.read(1))[0]
 	elif valuetype[0] == 's_byte':         return struct.unpack('b', input_stream.read(1))[0]
@@ -121,10 +121,14 @@ def decode_data(input_stream, current_defname):
 						exit()
 
 				if d_command == 'part': 
+					#print(input_stream.tell(), current_defname, d_command, d_valtype, d_name, end=': ')
+
 					outval = decode_part(input_stream, d_valtype)
+					#if not isinstance(outval, dict): print(outval)
+					
+					else: print()
+					
 					if d_name != '': output_data[d_name] = outval
-					#if not isinstance(outval, dict): 
-					#	print(input_stream.tell(), current_defname, d_command, d_valtype, d_name, outval)
 				if d_command == 'setvar': global_vars[d_name] = decode_part(input_stream, d_valtype)
 				if d_command == 'pointer': pointers[d_name] = decode_part(input_stream, d_valtype)
 				if d_command == 'pointset': pointset[d_name] = decode_part(input_stream, d_valtype)
@@ -133,24 +137,24 @@ def decode_data(input_stream, current_defname):
 					datasetlen[d_name] = decode_part(input_stream, d_valtype)
 
 				if def_part[0] == 'act_pointset': 
-					t_subdefine, t_pointset = d_valtype[0].split(',')
+					t_structure, t_pointset = d_valtype[0].split(',')
 					dataset = []
 					oldpos = input_stream.tell()
 					for pointer in pointset[t_pointset]:
 						if pointer != 0:
 							input_stream.seek(pointer)
-							dataset.append(  decode_part(input_stream, ['subdefine,'+t_subdefine])  )
+							dataset.append(  decode_part(input_stream, ['structure,'+t_structure])  )
 						else: dataset.append(None)
 
 					output_data[d_name] = dataset
 					input_stream.seek(oldpos)
 
 				if def_part[0] == 'act_pointer': 
-					t_subdefine, t_pointername = d_valtype[0].split(',')
+					t_structure, t_pointername = d_valtype[0].split(',')
 					dataset = []
 					oldpos = input_stream.tell()
 					input_stream.seek(pointers[t_pointername])
-					output_data[d_name] = decode_part(input_stream, ['subdefine,'+t_subdefine])
+					output_data[d_name] = decode_part(input_stream, ['structure,'+t_structure])
 					input_stream.seek(oldpos)
 
 			#if def_part[0] == 'math_pointset': 
@@ -180,19 +184,19 @@ def parse(in_stream, datadef_file):
 
 	datadef_defs = {}
 
-	current_subdef = None
+	current_substruct = None
 	for datadef_line in datadef_lines:
 		splittedtext = [x.strip() for x in datadef_line.split('#')[0].strip().split('|')]
 
 		if splittedtext != ['']:
-			if splittedtext[0] == 'def_start':
-				current_subdef = splittedtext[1]
-				datadef_defs[current_subdef] = []
-			elif splittedtext[0] == 'def_end':
-				current_subdef = None
+			if splittedtext[0] == 'area_struct':
+				current_substruct = splittedtext[1]
+				datadef_defs[current_substruct] = []
+			elif splittedtext[0] == 'area_end':
+				current_substruct = None
 			else:
 				txttxt = splittedtext[0], splittedtext[1].split(':'), splittedtext[2]
-				datadef_defs[current_subdef].append(txttxt)
+				datadef_defs[current_substruct].append(txttxt)
 
 	output_data = decode_data(in_stream, 'main')
 	return output_data, global_vars, pointers, pointset
