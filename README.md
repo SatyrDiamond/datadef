@@ -1,4 +1,4 @@
-# datadef
+
 ## Part
 
 | datatype | Name | Comma Arguments | DataType Arguments |
@@ -18,6 +18,7 @@
 | ```float_b``` | Float (Big) | | |
 | ```double``` | Double (Little) | | |
 | ```double_b``` | Double (Big) | | |
+| ```varint``` | VarInt | |  |
 | ```raw``` | Raw | Length | |
 | ```raw_l``` | Raw | | Length |
 | ```string_n``` | String (with Length) | Length | |
@@ -28,5 +29,5 @@
 | ```list_l``` | List | | Length, Type |
 | ```pair``` | Pair | | Type1, Type2 |
 | ```mlist``` | Multi-List | | Type1, Type2, ... |
-| ```keyval_n``` | Key-Value | Length, | StringType, ValueType |
-| ```keyval_l | Key-Value | | Length, StringType, ValueType |
+| ```keyval_n``` | Key-Value | Length | StringType, ValueType |
+| ```keyval_l``` | Key-Value | | Length, StringType, ValueType |
