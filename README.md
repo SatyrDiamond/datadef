@@ -13,7 +13,7 @@ a binary structure parser, outputs as python dictionary
 | ```pointset``` | add to pointerset list, must be list of numbers | PointerSet Name |
 | ```act_pointset``` | Define Name, Pointer Name | |
 | ```act_pointset``` | Define Name, PointerSet Name | |
-| ```header``` | Length | Hex Data |
+| ```header``` | same as ```part``` but must be number | Hex Data |
 
 ## Part
 | datatype | Name | Comma Arguments | DataType Arguments |
