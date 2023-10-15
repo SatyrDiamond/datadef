@@ -1,14 +1,13 @@
-
-# DataDef: Data Definition 
+# DataDef: Data Definition Decode (not finished)
 
 ## Main
-| Action Type | Name | Last Part |
+| Action Type | Info | Last Part |
 | --- | --- | --- |
 | ```part``` | Output Data | Value Name |
 | ```setvar``` | same as ```part``` but set as varible | Var Name |
 | ```pointer``` | add to pointer list | Pointer Name |
 | ```pointset``` | must be list of numbers | PointerSet Name |
-| ```act_pointset``` | act on pointset | PointerSet Name |
+| ```act_pointset``` | Define Name, PointerSet Name | PointerSet Name |
 | ```header``` | Length | Hex Data |
 
 ## Part
