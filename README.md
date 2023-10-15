@@ -1,6 +1,17 @@
 
-## Part
+# DataDef: Data Definition 
 
+## Main
+| Action Type | Name | Last Part |
+| --- | --- | --- | --- |
+| ```part``` | Output Data | Value Name |
+| ```setvar``` | same as ```part``` but set as varible | Var Name |
+| ```pointer``` | add to pointer list | Pointer Name |
+| ```pointset``` | must be list of numbers | PointerSet Name |
+| ```act_pointset``` | act on pointset | PointerSet Name |
+| ```header``` | Length | Hex Data |
+
+## Part
 | datatype | Name | Comma Arguments | DataType Arguments |
 | --- | --- | --- | --- |
 | ```skip``` | Skip | | |
@@ -31,3 +42,22 @@
 | ```mlist``` | Multi-List | | Type1, Type2, ... |
 | ```keyval_n``` | Key-Value | Length | StringType, ValueType |
 | ```keyval_l``` | Key-Value | | Length, StringType, ValueType |
+| ```getvar``` | Get Var | Var Name | |
+
+
+## example
+```
+def_start| it_sample
+header           |raw,4               |494d5053
+part             |raw,12              |dos_filename
+part             |skip,1              |
+part             |byte                |globalvol
+part             |byte                |flags
+part             |byte                |defualtvolume
+part             |raw,26              |name
+part             |skip,2              |
+part             |int                 |length
+part             |int                 |loop_start
+part             |int                 |loop_end
+def_end
+```
