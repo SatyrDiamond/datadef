@@ -45,7 +45,7 @@ a binary structure parser, outputs as python dictionary
 | ```list_n``` | List | Length | Type |
 | ```list_l``` | List | | Length, Type |
 | ```pair``` | Pair | | Type1, Type2 |
-| ```mlist``` | Multi-List | | Type1, Type2, ... |
+| ```mlist``` | List with multiple types | | Type1, Type2, ... |
 | ```keyval_n``` | Key-Value | Length | StringType, ValueType |
 | ```keyval_l``` | Key-Value | | Length, StringType, ValueType |
 | ```getvar``` | Get Var | Var Name | |
