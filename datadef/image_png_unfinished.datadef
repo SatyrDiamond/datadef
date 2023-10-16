@@ -30,7 +30,7 @@ area_cases_raw  | ChunkTypes
 area_struct     | PngChunk
  setvar         |int_b                                                        |chunk_size
  part_setvar    |raw.4                                                        |chunk_type
- part_iso_n     |getvar.chunk_size/switch_raw.ChunkTypes/getvar.chunk_type    |chunk_data
+ part           |isolate/getvar.chunk_size/switch_raw.ChunkTypes/getvar.chunk_type    |chunk_data
  part           |raw.4                                                        |chunk_crc
  area_end
 

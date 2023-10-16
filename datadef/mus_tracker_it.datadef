@@ -11,7 +11,7 @@ part             |list_n.25/pair/s_byte/short        |points
 area_end
 
 area_struct | it_instrument
-header           |raw.4                              |494d5049
+magic            |raw.4                              |494d5049
 part             |raw.12                             |dos_filename
 part             |skip.1                             |
 part             |byte                               |new_note_action
@@ -42,7 +42,7 @@ area_end
 ###### Samples
 
 area_struct | it_sample
-header           |raw.4                              |494d5053
+magic            |raw.4                              |494d5053
 part             |raw.12                             |dos_filename
 part             |skip.1                             |
 part             |byte                               |globalvol
@@ -65,7 +65,7 @@ area_end
 ###### Main
 
 area_struct | main
-header           |raw.4                              |494d504d
+magic            |raw.4                              |494d504d
 part             |string_n.26                        |song_name
 part             |byte                               |hilight_minor
 part             |byte                               |hilight_major

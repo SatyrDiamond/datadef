@@ -19,6 +19,20 @@ def readstring(data):
 def string_fix(inputtxt):
 	return inputtxt.split(b'\x00')[0].decode().translate(dict.fromkeys(range(32)))
 
+def do_switch(input_stream, case_name, data_forcase):
+	if case_name in datadef_cases:
+		case_data = datadef_cases[case_name]
+		for s_case_data in case_data:
+			if data_forcase == s_case_data[0]: 
+				return decode_part(input_stream, s_case_data[1])
+			if s_case_data[0] == None:
+				print('[info] cases: else from', bytes.hex(data_forcase), data_forcase)
+				return decode_part(input_stream, s_case_data[1])
+
+	else:
+		print('[error] '+case_name+' is not found in defined cases.')
+		exit()
+
 
 
 def decode_part(input_stream, d_valtype):
@@ -94,26 +108,17 @@ def decode_part(input_stream, d_valtype):
 	elif valuetype[0] == 'num':            return struct.unpack('B', input_stream.read(1))[0]
 	elif valuetype[0] == 'currentpos':     return input_stream.tell()
 	elif valuetype[0] == 'structure':      return decode_data(input_stream, valuetype[1])
+	elif valuetype[0] == 'isolate':        
+		is_isolated.append(0)
+		data_size = decode_part(input_stream, [d_valtype[1]])
+		outval = decode_part( BytesIO(input_stream.read(data_size) ), d_valtype[2:])
+		is_isolated.remove(0)
+		return outval
 	elif valuetype[0] == 'end':      is_ended = True
 
 	elif valuetype[0] == 'switch_raw':
-
 		data_forcase = decode_part(input_stream, d_valtype[1:])
-
-		if valuetype[1] in datadef_cases:
-			case_data = datadef_cases[valuetype[1]]
-			for s_case_data in case_data:
-				if data_forcase == s_case_data[0]: 
-					return decode_part(input_stream, s_case_data[1])
-				if s_case_data[0] == None:
-					print('[info] cases: else from', bytes.hex(data_forcase), data_forcase)
-					return decode_part(input_stream, s_case_data[1])
-
-		else:
-			print('[error] '+valuetype[1]+' is not found in defined cases.')
-			exit()
-
-
+		return do_switch(input_stream, valuetype[1], data_forcase)
 
 	else:
 		print('unknown cmd:', valuetype[0])
@@ -124,6 +129,7 @@ global_vars = {}
 using_defs = []
 pointers = {}
 pointset = {}
+varlist = {}
 
 is_isolated = []
 
@@ -158,11 +164,16 @@ def decode_data(input_stream, current_defname):
 					d_name.ljust(20), 
 					' > '.join(d_valtype) )
 
-				if d_command == 'header': 
+				if d_command == 'magic': 
 					hexdata = bytes.hex(decode_part(input_stream, d_valtype))
 					if hexdata != d_name: 
-						print('[datadef] header not match', hexdata, d_name)
+						print('[datadef] magic not match', hexdata, d_name)
 						exit()
+
+				if d_command == 'magic_end': 
+					hexdata = bytes.hex(decode_part(input_stream, d_valtype))
+					if hexdata != d_name: 
+						is_ended = True
 
 				if d_command == 'part': 
 					outval = decode_part(input_stream, d_valtype)
@@ -170,18 +181,11 @@ def decode_data(input_stream, current_defname):
 
 				if d_command == 'part_loop': 
 					outval = []
-					while is_ended == False or input_stream.tell() < input_stream.__sizeof__():
+					while is_ended == False and input_stream.tell() < input_stream.__sizeof__():
 						outpart = decode_part(input_stream, d_valtype)
 						outval.append(outpart)
 					is_ended = False
 					output_data[d_name] = outval
-
-				if d_command == 'part_iso_n': 
-					is_isolated.append(0)
-					data_size = decode_part(input_stream, [d_valtype[0]])
-					outval = decode_part( BytesIO(input_stream.read(data_size) ), d_valtype[1:])
-					if d_name != '': output_data[d_name] = outval
-					is_isolated.remove(0)
 
 				if d_command == 'setvar': 
 					outval = decode_part(input_stream, d_valtype)
@@ -196,6 +200,12 @@ def decode_data(input_stream, current_defname):
 
 				if d_command == 'pointer': pointers[d_name] = decode_part(input_stream, d_valtype)
 				if d_command == 'pointset': pointset[d_name] = decode_part(input_stream, d_valtype)
+				if d_command == 'varlist': varlist[d_name] = decode_part(input_stream, d_valtype)
+				if d_command == 'part_varlist': 
+					outval = decode_part(input_stream, d_valtype)
+					if d_name != '': 
+						output_data[d_name] = outval
+						varlist[d_name] = outval
 
 				if d_command == 'dataset_len': 
 					datasetlen[d_name] = decode_part(input_stream, d_valtype)
@@ -217,8 +227,29 @@ def decode_data(input_stream, current_defname):
 					t_structure, t_pointername = d_valtype[0].split('.')
 					oldpos = input_stream.tell()
 					input_stream.seek(pointers[t_pointername])
-					output_data[d_name] = decode_part(input_stream, ['structure,'+t_structure])
+					output_data[d_name] = decode_part(input_stream, ['structure.'+t_structure])
 					input_stream.seek(oldpos)
+
+				if def_part[0] == 'act_varlist_rep':
+					t_varlistname = d_valtype[0].split('.')
+					dataset = []
+					for vardata in varlist[t_varlistname[0]]:
+						partdata = []
+						for num in range(vardata):
+							partdata.append(decode_part(input_stream, d_valtype[1:]))
+						dataset.append(partdata)
+					output_data[d_name] = dataset
+
+				if def_part[0] == 'act_varlist_swi':
+					t_caseset, t_varlistname = d_valtype[0].split('.')
+
+					dataset = []
+					for casedata in varlist[t_varlistname]:
+						dataset.append(do_switch(input_stream, t_caseset, casedata))
+					output_data[d_name] = dataset
+
+
+
 
 			#if def_part[0] == 'math_pointset': 
 			#	splitted_string = def_part[1].split('.')
