@@ -104,7 +104,7 @@ part      |float        |reverb_width
 part      |float        |stereo_enhance
 part      |float        |voices
 
-part      |string_n,32  |preset_name
+part      |string_n.32  |preset_name
 area_end
 
 

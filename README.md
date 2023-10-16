@@ -8,6 +8,7 @@ a binary structure parser, outputs as python dictionary
 | ```def_start``` | Structure Name |  |
 | ```def_end``` | Structure End |  |
 | ```part``` | Output Data | Value Name |
+| ```part_iso_n``` | Output Data (Isolated), valuetype at start for data length | Value Name |
 | ```setvar``` | same as ```part``` but set as varible | Var Name |
 | ```pointer``` | add to pointer list | Pointer Name |
 | ```pointset``` | add to pointerset list, must be list of numbers | PointerSet Name |

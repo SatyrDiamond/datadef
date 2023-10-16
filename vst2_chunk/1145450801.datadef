@@ -65,21 +65,21 @@ part      |float             |volume
 part      |float             |osc1_vol
 part      |float             |osc1_cut
 
-part      |list_n,256:float  |osc1_wave
+part      |list_n.256/float  |osc1_wave
 
 part      |float             |osc1_dec
 part      |float             |osc1_oct
 part      |float             |osc2_vol
 part      |float             |osc2_cut
 
-part      |list_n,256:float  |osc2_wave
+part      |list_n.256/float  |osc2_wave
 
 part      |float             |osc2_dec
 part      |float             |osc2_oct
 part      |float             |osc3_vol
 part      |float             |osc3_cut
 
-part      |list_n,256:float  |osc3_wave
+part      |list_n.256/float  |osc3_wave
 
 part      |float             |osc3_dec
 part      |float             |osc3_oct
@@ -98,7 +98,7 @@ part      |float             |stereo_enhance
 part      |float             |dyamic
 part      |float             |voices
 
-part      |string_n,32       |preset_name
+part      |string_n.32       |preset_name
 area_end
 
 

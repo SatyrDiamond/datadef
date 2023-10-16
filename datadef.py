@@ -5,6 +5,7 @@ import os
 import struct
 import varint
 import datadef
+from io import BytesIO
 
 def readstring(data):
 	output = b''
@@ -23,15 +24,10 @@ def string_fix(inputtxt):
 def decode_part(input_stream, d_valtype):
 	global global_vars
 
-	valuetype = d_valtype[0].split(',')
+	valuetype = d_valtype[0].split('.')
 
+	## Bytes
 	if valuetype[0] == 'skip':             input_stream.read(int(valuetype[1]))
-	elif valuetype[0] == 'structure':      return decode_data(input_stream, valuetype[1])
-
-	elif valuetype[0] == 'getvar':         return global_vars[valuetype[1]]
-	elif valuetype[0] == 'num':            return struct.unpack('B', input_stream.read(1))[0]
-	elif valuetype[0] == 'currentpos':     return input_stream.tell()
-	elif valuetype[0] == 'structure':      return decode_data(input_stream, valuetype[1])
 
 	elif valuetype[0] == 'byte':           return struct.unpack('B', input_stream.read(1))[0]
 	elif valuetype[0] == 's_byte':         return struct.unpack('b', input_stream.read(1))[0]
@@ -56,6 +52,7 @@ def decode_part(input_stream, d_valtype):
 
 	elif valuetype[0] == 'raw':            return input_stream.read(int(valuetype[1]))
 	elif valuetype[0] == 'raw_l':          return input_stream.read(int( decode_part(input_stream, d_valtype[1:]) ))
+	elif valuetype[0] == 'raw_e':          return input_stream.read()
 
 	elif valuetype[0] == 'string_n':       return string_fix(input_stream.read(int(valuetype[1])))
 	elif valuetype[0] == 'string_l':       return string_fix(input_stream.read( decode_part(input_stream, d_valtype[1:]) ))
@@ -72,7 +69,7 @@ def decode_part(input_stream, d_valtype):
 	elif valuetype[0] == 'list_n':         return [decode_part(input_stream, d_valtype[1:]) for _ in range(int(valuetype[1]))]
 	elif valuetype[0] == 'list_l':         return [decode_part(input_stream, d_valtype[2:]) for _ in range(int( decode_part(input_stream, d_valtype[1:]) ))]
 
-	elif valuetype[0] == 'pair':           return [decode_part(input_stream, d_valtype[x+1].split(',')) for x in range(2)]
+	elif valuetype[0] == 'pair':           return [decode_part(input_stream, d_valtype[x+1].split('.')) for x in range(2)]
 	elif valuetype[0] == 'mlist':          return [decode_part(input_stream, [p_valtype]) for p_valtype in d_valtype[1:]]
 
 	elif valuetype[0] == 'keyval_n':
@@ -91,9 +88,33 @@ def decode_part(input_stream, d_valtype):
 			output[kv_key] = kv_val
 		return output
 
+	## DataDef
+	elif valuetype[0] == 'getvar':         return global_vars[valuetype[1]]
+	elif valuetype[0] == 'num':            return struct.unpack('B', input_stream.read(1))[0]
+	elif valuetype[0] == 'currentpos':     return input_stream.tell()
+	elif valuetype[0] == 'structure':      return decode_data(input_stream, valuetype[1])
+	elif valuetype[0] == 'switch_raw':
+
+		data_forcase = decode_part(input_stream, d_valtype[1:])
+
+		if valuetype[1] in datadef_cases:
+			case_data = datadef_cases[valuetype[1]]
+			for s_case_data in case_data:
+				if data_forcase == s_case_data[0]: 
+					return decode_part(input_stream, s_case_data[1])
+				if s_case_data[0] == None:
+					print('[info] cases: else from', bytes.hex(data_forcase), data_forcase)
+					return decode_part(input_stream, s_case_data[1])
+
+		else:
+			print('[error] '+valuetype[1]+' is not found in defined cases.')
+			exit()
+
+
 
 	else:
 		print('unknown cmd:', valuetype[0])
+		exit()
 
 
 global_vars = {}
@@ -101,11 +122,16 @@ using_defs = []
 pointers = {}
 pointset = {}
 
+is_isolated = []
+
 def decode_data(input_stream, current_defname):
-	global datadef_defs
+	global datadef_structs
 	global using_defs
 	global global_vars
-	current_def = datadef_defs[current_defname]
+	global is_isolated
+	if current_defname not in datadef_structs:
+		exit('[error] '+current_defname+' is not defined')
+	current_def = datadef_structs[current_defname]
 
 	output_data = {}
 	if current_defname not in using_defs:
@@ -114,6 +140,15 @@ def decode_data(input_stream, current_defname):
 
 			if len(def_part) == 3: 
 				d_command, d_valtype, d_name = def_part
+
+				print('[debug]', 
+					str(input_stream.tell()).ljust(10), 
+					'ISO' if is_isolated != [] else '   ', 
+					current_defname.ljust(20), 
+					d_command.ljust(13), 
+					d_name.ljust(20), 
+					' > '.join(d_valtype) )
+
 				if d_command == 'header': 
 					hexdata = bytes.hex(decode_part(input_stream, d_valtype))
 					if hexdata != d_name: 
@@ -121,15 +156,27 @@ def decode_data(input_stream, current_defname):
 						exit()
 
 				if d_command == 'part': 
-					#print(input_stream.tell(), current_defname, d_command, d_valtype, d_name, end=': ')
-
 					outval = decode_part(input_stream, d_valtype)
-					#if not isinstance(outval, dict): print(outval)
-					
-					else: print()
-					
 					if d_name != '': output_data[d_name] = outval
-				if d_command == 'setvar': global_vars[d_name] = decode_part(input_stream, d_valtype)
+
+				if d_command == 'part_iso_n': 
+					is_isolated.append(0)
+					data_size = decode_part(input_stream, [d_valtype[0]])
+					outval = decode_part( BytesIO(input_stream.read(data_size) ), d_valtype[1:])
+					if d_name != '': output_data[d_name] = outval
+					is_isolated.remove(0)
+
+				if d_command == 'setvar': 
+					outval = decode_part(input_stream, d_valtype)
+					if d_name != '': global_vars[d_name] = outval
+
+				if d_command == 'part_setvar':
+					outval = decode_part(input_stream, d_valtype)
+					
+					if d_name != '': 
+						output_data[d_name] = outval
+						global_vars[d_name] = outval
+
 				if d_command == 'pointer': pointers[d_name] = decode_part(input_stream, d_valtype)
 				if d_command == 'pointset': pointset[d_name] = decode_part(input_stream, d_valtype)
 
@@ -137,28 +184,27 @@ def decode_data(input_stream, current_defname):
 					datasetlen[d_name] = decode_part(input_stream, d_valtype)
 
 				if def_part[0] == 'act_pointset': 
-					t_structure, t_pointset = d_valtype[0].split(',')
+					t_structure, t_pointset = d_valtype[0].split('.')
 					dataset = []
 					oldpos = input_stream.tell()
 					for pointer in pointset[t_pointset]:
 						if pointer != 0:
 							input_stream.seek(pointer)
-							dataset.append(  decode_part(input_stream, ['structure,'+t_structure])  )
+							dataset.append(  decode_part(input_stream, ['struct,'+t_structure])  )
 						else: dataset.append(None)
 
 					output_data[d_name] = dataset
 					input_stream.seek(oldpos)
 
 				if def_part[0] == 'act_pointer': 
-					t_structure, t_pointername = d_valtype[0].split(',')
-					dataset = []
+					t_structure, t_pointername = d_valtype[0].split('.')
 					oldpos = input_stream.tell()
 					input_stream.seek(pointers[t_pointername])
 					output_data[d_name] = decode_part(input_stream, ['structure,'+t_structure])
 					input_stream.seek(oldpos)
 
 			#if def_part[0] == 'math_pointset': 
-			#	splitted_string = def_part[1].split(',')
+			#	splitted_string = def_part[1].split('.')
 			#	vmathval = int(splitted_string[1])
 			#	if splitted_string[0] == 'add': pointset[def_part[2]] = [x+vmathval for x in pointset[def_part[2]]]
 			#	if splitted_string[0] == 'sub': pointset[def_part[2]] = [x-vmathval for x in pointset[def_part[2]]]
@@ -177,26 +223,50 @@ def decode_data(input_stream, current_defname):
 
 
 def parse(in_stream, datadef_file):
-	global datadef_defs
+	global datadef_structs
+	global datadef_cases
 
 	datadef_stream = open(datadef_file, 'r')
 	datadef_lines = datadef_stream.readlines()
 
-	datadef_defs = {}
+	datadef_structs = {}
+	current_struct = None
 
-	current_substruct = None
+	datadef_cases = {}
+	current_case = None
+
 	for datadef_line in datadef_lines:
 		splittedtext = [x.strip() for x in datadef_line.split('#')[0].strip().split('|')]
 
 		if splittedtext != ['']:
 			if splittedtext[0] == 'area_struct':
-				current_substruct = splittedtext[1]
-				datadef_defs[current_substruct] = []
+				print('[datadef] structure found: '+splittedtext[1])
+				current_struct = splittedtext[1]
+				datadef_structs[current_struct] = []
 			elif splittedtext[0] == 'area_end':
-				current_substruct = None
+				current_struct = None
+				current_case = None
+
+
+			elif splittedtext[0] == 'area_cases_raw':
+				print('[datadef] cases (raw) found: '+splittedtext[1])
+				current_case = splittedtext[1]
+				datadef_cases[current_case] = []
+
+			elif splittedtext[0] == 'case_issame': 
+				if len(splittedtext) != 3: exit('[error] length in case_issame is not 3')
+				datadef_cases[current_case].append([bytearray.fromhex(splittedtext[2]), [splittedtext[1]]])
+
+			elif splittedtext[0] == 'case_else': 
+				datadef_cases[current_case].append([None, [splittedtext[1]]])
+
 			else:
-				txttxt = splittedtext[0], splittedtext[1].split(':'), splittedtext[2]
-				datadef_defs[current_substruct].append(txttxt)
+				if len(splittedtext) == 3:
+					txttxt = splittedtext[0], splittedtext[1].split('/'), splittedtext[2]
+					datadef_structs[current_struct].append(txttxt)
+				else:
+					print('[error] unknown cmd or length of Line is not 3')
+					exit()
 
 	output_data = decode_data(in_stream, 'main')
 	return output_data, global_vars, pointers, pointset
