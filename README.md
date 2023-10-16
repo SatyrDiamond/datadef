@@ -8,6 +8,7 @@ a binary structure parser, outputs as python dictionary
 | ```def_start``` | Structure Name |  |
 | ```def_end``` | Structure End |  |
 | ```part``` | Output Data | Value Name |
+| ```part_loop``` | Output Data (loop until end) | Value Name |
 | ```part_iso_n``` | Output Data (Isolated), valuetype at start for data length | Value Name |
 | ```setvar``` | same as ```part``` but set as varible | Var Name |
 | ```pointer``` | add to pointer list | Pointer Name |
@@ -40,7 +41,7 @@ a binary structure parser, outputs as python dictionary
 | ```string_n``` | String (with Length) | Length | |
 | ```string_l``` | String (with Length) | | Length |
 | ```string_t``` | String (until null) | | |
-| ```subdefine``` | do define action | | |
+| ```structure``` | do structure | | |
 | ```list_n``` | List | Length | Type |
 | ```list_l``` | List | | Length, Type |
 | ```pair``` | Pair | | Type1, Type2 |
@@ -48,6 +49,7 @@ a binary structure parser, outputs as python dictionary
 | ```keyval_n``` | Key-Value | Length | StringType, ValueType |
 | ```keyval_l``` | Key-Value | | Length, StringType, ValueType |
 | ```getvar``` | Get Var | Var Name | |
+| ```end``` | End | | |
 
 ## example
 ```
