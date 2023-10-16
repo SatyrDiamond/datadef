@@ -142,8 +142,8 @@ def decode_data(input_stream, current_defname):
 				d_command, d_valtype, d_name = def_part
 
 				print('[debug]', 
-					str(input_stream.tell()).ljust(10), 
 					'ISO' if is_isolated != [] else '   ', 
+					str(input_stream.tell()).ljust(10), 
 					current_defname.ljust(20), 
 					d_command.ljust(13), 
 					d_name.ljust(20), 
