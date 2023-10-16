@@ -51,17 +51,39 @@ a binary structure parser, outputs as python dictionary
 
 ## example
 ```
-def_start| it_sample
-header           |raw,4               |494d5053
-part             |raw,12              |dos_filename
-part             |skip,1              |
-part             |byte                |globalvol
-part             |byte                |flags
-part             |byte                |defualtvolume
-part             |raw,26              |name
-part             |skip,2              |
-part             |int                 |length
-part             |int                 |loop_start
-part             |int                 |loop_end
-def_end
+
+area_struct | main
+header           |raw.4                              |494d504d
+part             |string_n.26                        |song_name
+part             |byte                               |hilight_minor
+part             |byte                               |hilight_major
+setvar           |short                              |num_order
+setvar           |short                              |num_inst
+setvar           |short                              |num_samp
+setvar           |short                              |num_pat
+setvar           |short                              |cwtv
+setvar           |short                              |cmwt
+part             |short                              |flags
+part             |short                              |special
+part             |byte                               |globalvol
+part             |byte                               |mv
+part             |byte                               |speed
+part             |byte                               |tempo
+part             |byte                               |sep
+part             |byte                               |pwd
+part             |short                              |message_length
+pointer          |int                                |message_offset
+part             |int                                |reserved
+part             |list_n.64/byte                     |chn_pan
+part             |list_n.64/byte                     |chn_vol
+part             |list_l/getvar.num_order/byte       |orders
+pointset         |list_l/getvar.num_inst/int         |pointer_inst
+pointset         |list_l/getvar.num_samp/int         |pointer_samp
+pointset         |list_l/getvar.num_pat/int          |pointer_pat
+act_pointset     |it_instrument.pointer_inst         |data_inst
+act_pointset     |it_sample.pointer_samp             |data_samp
+act_pointset     |it_pattern.pointer_pat             |data_samp
+
+area_end
+
 ```
