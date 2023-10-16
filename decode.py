@@ -1,6 +1,7 @@
 
 import argparse
 import datadef
+import json
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", default=None)
@@ -22,16 +23,8 @@ in_stream = open(in_file, 'rb')
 
 output_data, global_vars, pointers, pointset = datadef.parse(in_stream, datadef_file)
 
-print(output_data)
-#print(global_vars)
-#print(pointers)
-#print(pointset)
 
-
-
-
-
-
+print(json.dumps(output_data, indent=4, sort_keys=True, default=str))
 
 
 
