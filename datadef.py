@@ -23,6 +23,7 @@ def string_fix(inputtxt):
 
 def decode_part(input_stream, d_valtype):
 	global global_vars
+	global is_ended
 
 	valuetype = d_valtype[0].split('.')
 
@@ -93,6 +94,8 @@ def decode_part(input_stream, d_valtype):
 	elif valuetype[0] == 'num':            return struct.unpack('B', input_stream.read(1))[0]
 	elif valuetype[0] == 'currentpos':     return input_stream.tell()
 	elif valuetype[0] == 'structure':      return decode_data(input_stream, valuetype[1])
+	elif valuetype[0] == 'end':      is_ended = True
+
 	elif valuetype[0] == 'switch_raw':
 
 		data_forcase = decode_part(input_stream, d_valtype[1:])
@@ -124,11 +127,15 @@ pointset = {}
 
 is_isolated = []
 
+is_ended = False
+
 def decode_data(input_stream, current_defname):
 	global datadef_structs
 	global using_defs
 	global global_vars
 	global is_isolated
+	global is_ended
+
 	if current_defname not in datadef_structs:
 		exit('[error] '+current_defname+' is not defined')
 	current_def = datadef_structs[current_defname]
@@ -137,6 +144,8 @@ def decode_data(input_stream, current_defname):
 	if current_defname not in using_defs:
 		using_defs.append(current_defname)
 		for def_part in current_def:
+
+			if is_ended == True: break
 
 			if len(def_part) == 3: 
 				d_command, d_valtype, d_name = def_part
@@ -158,6 +167,14 @@ def decode_data(input_stream, current_defname):
 				if d_command == 'part': 
 					outval = decode_part(input_stream, d_valtype)
 					if d_name != '': output_data[d_name] = outval
+
+				if d_command == 'part_loop': 
+					outval = []
+					while is_ended == False or input_stream.tell() < input_stream.__sizeof__():
+						outpart = decode_part(input_stream, d_valtype)
+						outval.append(outpart)
+					is_ended = False
+					output_data[d_name] = outval
 
 				if d_command == 'part_iso_n': 
 					is_isolated.append(0)
@@ -190,7 +207,7 @@ def decode_data(input_stream, current_defname):
 					for pointer in pointset[t_pointset]:
 						if pointer != 0:
 							input_stream.seek(pointer)
-							dataset.append(  decode_part(input_stream, ['struct,'+t_structure])  )
+							dataset.append(  decode_part(input_stream, ['structure.'+t_structure])  )
 						else: dataset.append(None)
 
 					output_data[d_name] = dataset
@@ -221,10 +238,10 @@ def decode_data(input_stream, current_defname):
 	return output_data
 
 
-
 def parse(in_stream, datadef_file):
 	global datadef_structs
 	global datadef_cases
+	global is_ended
 
 	datadef_stream = open(datadef_file, 'r')
 	datadef_lines = datadef_stream.readlines()
@@ -255,7 +272,7 @@ def parse(in_stream, datadef_file):
 
 			elif splittedtext[0] == 'case_issame': 
 				if len(splittedtext) != 3: exit('[error] length in case_issame is not 3')
-				datadef_cases[current_case].append([bytearray.fromhex(splittedtext[2]), [splittedtext[1]]])
+				datadef_cases[current_case].append([bytes.fromhex(splittedtext[2]), splittedtext[1].split('/')])
 
 			elif splittedtext[0] == 'case_else': 
 				datadef_cases[current_case].append([None, [splittedtext[1]]])
