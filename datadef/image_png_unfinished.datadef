@@ -1,42 +1,42 @@
 
 ###### Chunks
 
-area_struct     | IhdrChunk
- part           |int_b                   |width
- part           |int_b                   |height
- part           |byte                    |bit_depth
- part_setvar    |byte                    |color_type
- part           |byte                    |compression_method
- part           |byte                    |filter_method
- part           |byte                    |interlace_method
- area_end
+area_struct |  IhdrChunk
+part | int_b | width
+part | int_b | height
+part | byte | bit_depth
+part_setvar | byte | color_type
+part | byte | compression_method
+part | byte | filter_method
+part | byte | interlace_method
+area_end
 
 ###### Main
 
-area_cases_raw  | ChunkTypes
- case_issame    |structure.IhdrChunk     |49484452 # IHDR
- case_issame    |byte                    |73524742 # sRGB
- case_issame    |int_b                   |67414d41 # gAMA
- case_issame    |list_n.4/list_n.2/int_b |6348524d # cHRM
- case_issame    |mlist/int_b/int_b/byte  |70485973 # pHYs
- case_issame    |list_n.2/string_t       |74455874 # tEXt
- case_issame    |end                     |49454E44 # IEND
+area_cases_raw |  ChunkTypes
+case_issame | structure.IhdrChunk | 49484452 # IHDR
+case_issame | byte | 73524742 # sRGB
+case_issame | int_b | 67414d41 # gAMA
+case_issame | list.4 / list.2 / int_b | 6348524d # cHRM
+case_issame | mlist.3 / int_b / int_b / byte | 70485973 # pHYs
+case_issame | list.2 / string_t | 74455874 # tEXt
+case_issame | end | 49454E44 # IEND
 
- case_else      |raw_e                   |
- area_end 
-
-
-
-area_struct     | PngChunk
- setvar         |int_b                                                        |chunk_size
- part_setvar    |raw.4                                                        |chunk_type
- part           |isolate/getvar.chunk_size/switch_raw.ChunkTypes/getvar.chunk_type    |chunk_data
- part           |raw.4                                                        |chunk_crc
- area_end
+case_else | raw_e | 
+area_end 
 
 
 
-area_struct    | main
- part           |raw.8                   |89504e470d0a1a0a
- part_loop      |structure.PngChunk      |chunks
- area_end
+area_struct |  PngChunk
+setvar | int_b | chunk_size
+part_setvar | raw.4  | chunk_type
+part | isolate / getvar.chunk_size / switch_raw.ChunkTypes / getvar.chunk_type | chunk_data
+part | raw.4  | chunk_crc
+area_end
+
+
+
+area_struct |  main
+part | raw.8 | 89504e470d0a1a0a
+part_loop | structure.PngChunk | chunks
+area_end

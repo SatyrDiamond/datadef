@@ -63,29 +63,28 @@ def decode_part(input_stream, d_valtype):
 	elif valuetype[0] == 'double_b':       return struct.unpack('>d', input_stream.read(8))[0]
 
 	elif valuetype[0] == 'varint':         return varint.decode_stream(input_stream)
-	elif valuetype[0] == 'varint_f':       return varint.decode_bytes(input_stream.read(4))
+	elif valuetype[0] == 'varint_i':       return varint.decode_bytes(input_stream.read(4))
 
 	elif valuetype[0] == 'raw':            return input_stream.read(int(valuetype[1]))
 	elif valuetype[0] == 'raw_l':          return input_stream.read(int( decode_part(input_stream, d_valtype[1:]) ))
 	elif valuetype[0] == 'raw_e':          return input_stream.read()
 
-	elif valuetype[0] == 'string_n':       return string_fix(input_stream.read(int(valuetype[1])))
-	elif valuetype[0] == 'string_l':       return string_fix(input_stream.read( decode_part(input_stream, d_valtype[1:]) ))
+	elif valuetype[0] == 'string':         return input_stream.read(int(valuetype[1])).split(b'\x00')[0].decode()
+	elif valuetype[0] == 'string_l':       return input_stream.read( decode_part(input_stream, d_valtype[1:]) ).split(b'\x00')[0].decode()
 
-	elif valuetype[0] == 's_string_n':     return input_stream.read(int(valuetype[1])).split(b'\x00')[0]
-	elif valuetype[0] == 's_string_l':     return input_stream.read( decode_part(input_stream, d_valtype[1:]) ).split(b'\x00')[0]
+	elif valuetype[0] == 'stringf':        return string_fix(input_stream.read(int(valuetype[1])).split(b'\x00')[0])
+	elif valuetype[0] == 'stringf_l':      return string_fix(input_stream.read( decode_part(input_stream, d_valtype[1:]) ).split(b'\x00')[0])
 
 	elif valuetype[0] == 'string_t':       return readstring(input_stream)
 
-	elif valuetype[0] == 'dstring_n':      return input_stream.read(int(valuetype[1])*2).decode()
+	elif valuetype[0] == 'dstring':        return input_stream.read(int(valuetype[1])*2).decode()
 	elif valuetype[0] == 'dstring_l':      return input_stream.read( decode_part(input_stream, d_valtype[1:])*2 ).decode()
 
-	elif valuetype[0] == 'string_n':       return string_fix(input_stream.read(int(valuetype[1])))
-	elif valuetype[0] == 'list_n':         return [decode_part(input_stream, d_valtype[1:]) for _ in range(int(valuetype[1]))]
+	elif valuetype[0] == 'list':           return [decode_part(input_stream, d_valtype[1:]) for _ in range(int(valuetype[1]))]
 	elif valuetype[0] == 'list_l':         return [decode_part(input_stream, d_valtype[2:]) for _ in range(int( decode_part(input_stream, d_valtype[1:]) ))]
 
 	elif valuetype[0] == 'pair':           return [decode_part(input_stream, d_valtype[x+1].split('.')) for x in range(2)]
-	elif valuetype[0] == 'mlist':          return [decode_part(input_stream, [p_valtype]) for p_valtype in d_valtype[1:]]
+	elif valuetype[0] == 'mlist':          return [decode_part(input_stream, d_valtype[x+1].split('.')) for x in range(int(valuetype[1]))]
 
 	elif valuetype[0] == 'keyval_n':
 		output = {}
@@ -155,7 +154,6 @@ def decode_data(input_stream, current_defname):
 
 			if len(def_part) == 3: 
 				d_command, d_valtype, d_name = def_part
-
 				print('[debug]', 
 					'ISO' if is_isolated != [] else '   ', 
 					str(input_stream.tell()).ljust(10), 
@@ -256,7 +254,7 @@ def decode_data(input_stream, current_defname):
 			#	vmathval = int(splitted_string[1])
 			#	if splitted_string[0] == 'add': pointset[def_part[2]] = [x+vmathval for x in pointset[def_part[2]]]
 			#	if splitted_string[0] == 'sub': pointset[def_part[2]] = [x-vmathval for x in pointset[def_part[2]]]
-			#	if splitted_string[0] == 'div': pointset[def_part[2]] = [x/vmathval for x in pointset[def_part[2]]]
+			#	if splitted_string[0] == 'div': pointset[def_part[2]] = [x / vmathval for x in pointset[def_part[2]]]
 			#	if splitted_string[0] == 'mul': pointset[def_part[2]] = [x*vmathval for x in pointset[def_part[2]]]
 
 
@@ -303,14 +301,14 @@ def parse(in_stream, datadef_file):
 
 			elif splittedtext[0] == 'case_issame': 
 				if len(splittedtext) != 3: exit('[error] length in case_issame is not 3')
-				datadef_cases[current_case].append([bytes.fromhex(splittedtext[2]), splittedtext[1].split('/')])
+				datadef_cases[current_case].append([bytes.fromhex(splittedtext[2]), splittedtext[1].split(' / ')])
 
 			elif splittedtext[0] == 'case_else': 
 				datadef_cases[current_case].append([None, [splittedtext[1]]])
 
 			else:
 				if len(splittedtext) == 3:
-					txttxt = splittedtext[0], splittedtext[1].split('/'), splittedtext[2]
+					txttxt = splittedtext[0], [x.strip() for x in splittedtext[1].split('/')], splittedtext[2]
 					datadef_structs[current_struct].append(txttxt)
 				else:
 					print('[error] unknown cmd or length of Line is not 3')
